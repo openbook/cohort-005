@@ -424,7 +424,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   if (intent === "mark-complete") {
-    markLessonComplete(db, currentUserId, lessonId);
+    markLessonComplete(db, { userId: currentUserId, lessonId }, new Date());
     return { success: true };
   }
 

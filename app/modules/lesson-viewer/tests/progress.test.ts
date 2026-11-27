@@ -10,6 +10,8 @@ import {
 } from "../progress.server";
 import { addLesson, addModule, addWatchEvent, setUp } from "./fixtures";
 
+const NOW = new Date("2026-10-06T12:00:00.000Z");
+
 let world: ReturnType<typeof setUp>;
 let lessonId: number;
 let otherLessonId: number;
@@ -34,22 +36,34 @@ describe("lesson progress", () => {
       LessonProgressStatus.InProgress
     );
 
-    const done = markLessonComplete(world.db, world.user.id, lessonId);
+    const done = markLessonComplete(
+      world.db,
+      { userId: world.user.id, lessonId: lessonId },
+      NOW
+    );
     expect(done.status).toBe(LessonProgressStatus.Completed);
-    expect(done.completedAt).not.toBeNull();
+    expect(done.completedAt).toBe(NOW.toISOString());
     expect(getLessonProgress(world.db, world.user.id, lessonId)?.id).toBe(
       done.id
     );
   });
 
   it("completes a lesson that was never opened", () => {
-    const done = markLessonComplete(world.db, world.user.id, lessonId);
+    const done = markLessonComplete(
+      world.db,
+      { userId: world.user.id, lessonId: lessonId },
+      NOW
+    );
     expect(done.status).toBe(LessonProgressStatus.Completed);
-    expect(done.completedAt).not.toBeNull();
+    expect(done.completedAt).toBe(NOW.toISOString());
   });
 
   it("does not move a completed lesson back to in progress", () => {
-    markLessonComplete(world.db, world.user.id, lessonId);
+    markLessonComplete(
+      world.db,
+      { userId: world.user.id, lessonId: lessonId },
+      NOW
+    );
     const again = markLessonInProgress(world.db, world.user.id, lessonId);
     expect(again.status).toBe(LessonProgressStatus.Completed);
   });
@@ -62,8 +76,16 @@ describe("lesson progress", () => {
 
   it("lists the student's progress across the course only", () => {
     markLessonInProgress(world.db, world.user.id, lessonId);
-    markLessonComplete(world.db, world.user.id, otherLessonId);
-    markLessonComplete(world.db, world.instructor.id, lessonId);
+    markLessonComplete(
+      world.db,
+      { userId: world.user.id, lessonId: otherLessonId },
+      NOW
+    );
+    markLessonComplete(
+      world.db,
+      { userId: world.instructor.id, lessonId: lessonId },
+      NOW
+    );
 
     const rows = getLessonProgressForCourse(
       world.db,
